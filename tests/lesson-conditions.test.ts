@@ -143,6 +143,13 @@ test("custom unit names with invisible characters are rejected", () => {
     v({ unitMode: "custom", customUnitName: "架空の単元テスト" }).ok,
     true,
   );
+  // Pasted tabs and line breaks are whitespace, folded by normalization.
+  for (const name of ["架空の単元\t", "\t架空の単元", "架空の\n単元\r\n"]) {
+    const result = v({ unitMode: "custom", customUnitName: name });
+    assert.equal(result.ok, true, JSON.stringify(name));
+  }
+  const folded = v({ unitMode: "custom", customUnitName: "架空の\t単元\n" });
+  if (folded.ok) assert.equal(folded.conditions.unitName, "架空の 単元");
 });
 
 test("lessonNumber must be within 1..totalLessons", () => {

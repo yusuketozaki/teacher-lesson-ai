@@ -40,6 +40,9 @@ export function parseIntegerText(raw: string, maxDigits = 6): number | null {
 /**
  * Control, format (zero-width etc.) and Hangul filler characters, which are
  * invisible or can make a unit name look different from what is stored.
+ * Apply to normalized names, where tabs and line breaks are already folded
+ * into spaces. \p{Cf} also rejects ZWJ and emoji variation selectors; that is
+ * accepted for unit names in this prototype.
  */
 const INVISIBLE_CHARS = /[\p{Cc}\p{Cf}\u115F\u1160\u3164\uFFA0]/u;
 
@@ -79,10 +82,7 @@ export function validateConditions(
     const duplicate = name === "" ? undefined : findCatalogUnitByName(name);
     if (name === "") {
       errors.customUnitName = "単元名を入力してください（空白のみは不可）。";
-    } else if (
-      hasInvisibleChars(input.customUnitName) ||
-      hasInvisibleChars(name)
-    ) {
+    } else if (hasInvisibleChars(name)) {
       errors.customUnitName =
         "単元名に制御文字や幅のない文字など、表示されない文字は使えません。";
     } else if (textLength(name) > LIMITS.unitNameMaxLength) {
