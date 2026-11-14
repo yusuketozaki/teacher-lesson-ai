@@ -1,0 +1,35 @@
+name: Feature / Research
+description: 機能・調査の課題と検証方法を整理する
+body:
+  - type: markdown
+    attributes:
+      value: 実際の児童生徒情報・学校内部資料・秘密情報を記載しないでください。
+  - type: textarea
+    id: problem
+    attributes:
+      label: 利用者と課題
+      description: 誰が、どの場面で、何に困るか。根拠と仮説を区別してください。
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: 期待する結果・受け入れ条件
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: 対象外
+  - type: textarea
+    id: data
+    attributes:
+      label: 扱うデータ・外部送信・保存・権利上の確認
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: 検証方法
+    validations:
+      required: true
