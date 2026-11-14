@@ -52,3 +52,7 @@ npm start
 ## 依存関係の補足
 
 `minimatch` は公開時点の既知の DoS 脆弱性を避けるため、修正版 11.0.1 に override しています。更新時は lint・型検査・テスト・ビルドを再確認してください。CI は Node.js 24 で同じチェックを実行します。
+
+## 開発運用
+
+通常の作業は `develop` から Issue ごとのブランチを作り、PR で統合します。詳細は [CONTRIBUTING.md](CONTRIBUTING.md)、[リリース手順](docs/releasing.md)、[公開・情報管理](docs/publication.md) を参照してください。ブランチ保護の GitHub 設定は文書とは別に管理します。

@@ -1,0 +1,28 @@
+name: Bug
+description: 不具合の再現と期待結果を報告する
+body:
+  - type: markdown
+    attributes:
+      value: 機密性のある脆弱性や個人情報を公開 Issue に記載しないでください。再現には架空データを使ってください。
+  - type: input
+    id: version
+    attributes:
+      label: バージョン・コミットと環境
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 再現手順
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期待する動作と実際の動作
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: 修正確認方法・影響範囲
