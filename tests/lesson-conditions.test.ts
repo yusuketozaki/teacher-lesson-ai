@@ -149,6 +149,7 @@ test("custom unit names with invisible characters are rejected", () => {
     assert.equal(result.ok, true, JSON.stringify(name));
   }
   const folded = v({ unitMode: "custom", customUnitName: "架空の\t単元\n" });
+  assert.equal(folded.ok, true);
   if (folded.ok) assert.equal(folded.conditions.unitName, "架空の 単元");
 });
 
