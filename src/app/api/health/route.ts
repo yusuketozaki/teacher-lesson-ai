@@ -1,3 +1,3 @@
 export function GET() {
-  return Response.json({ status: "ok", stage: "skeleton" });
+  return Response.json({ status: "ok", stage: "mock-prototype" });
 }

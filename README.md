@@ -1,8 +1,8 @@
 # Teacher Lesson AI
 
-日本の教員向けに、児童・生徒を特定できる情報を扱わず、授業準備を支援するサービスを検討するための開発用スケルトンです。
+日本の教員向けに、児童・生徒を特定できる情報を扱わず、授業準備を支援するサービスを検討するための開発中の試作です。
 
-**実用サービスではありません。AI 生成・保存・認証・決済は未実装です。**
+**実用サービスではありません。** 小学5年・算数の授業案のたたき台を、固定テンプレートの **mock** で作り、教員が確認・編集・コピーする流れだけを試せます。AI 生成・保存・認証・決済は未実装です。詳しくは [mock 試作メモ](docs/mock-mvp.md) と [保留事項](docs/pending-decisions.md) を参照してください。
 
 ## 開発
 
@@ -22,20 +22,21 @@ npm run build
 npm start
 ```
 
-`check` は整形確認、ESLint、TypeScript、基本テストを実行します。
+`check` は整形確認、ESLint、TypeScript、単体テストを実行します。ブラウザでの E2E は `npm run e2e`（Playwright・Chromium。初回は `npx playwright install chromium`）で実行します。E2E は CI に含めていません。
 
 ## 構成
 
-- `src/app/`: Next.js App Router の画面と API。`/api/health` のみ実装。
-- `src/components/`: 共通 UI の配置先。
-- `src/lib/`: 共通定義。
+- `src/app/`: Next.js App Router の画面と API。`/api/health` と mock API（`/api/mock/goal-candidates`、`/api/mock/lesson-plan`）。
+- `src/components/`: 画面の UI コンポーネント。
+- `src/lib/`: 共通定義。`src/lib/lesson/` に入力検証、mock 生成、スキーマ検証、時間配分チェック、コピー用整形。
 - `src/server/`: 将来のサーバー専用処理の配置先。
-- `tests/`: 基本テスト。
+- `tests/`: 単体テスト（node:test）。
+- `e2e/`: ブラウザ E2E（Playwright）。
 - `docs/`: スコープと安全設計上の確認事項。
 
 ## 最初の対象
 
-学年、教科、単元、授業時間などから授業案のたたき台を作る構想です。まずは狭い教科・学年で有用性を検証する想定で、対応範囲は未決定です。
+最初の試作対象は小学5年の算数です（#6）。単元の仮候補は出典未確認で、網羅性も保証しません（#7）。実 AI の選定は保留中です（#9）。
 
 児童生徒の名簿・成績・行動記録、教材ファイルアップロード、決済、外部 AI への送信は初期スコープに含めません。
 
