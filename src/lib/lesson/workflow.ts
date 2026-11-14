@@ -21,6 +21,8 @@ import type {
   LessonPlanResponse,
   PhaseKey,
 } from "./types.ts";
+import { textLength } from "./conditions.ts";
+import { LIMITS } from "./limits.ts";
 import { toEditablePlan } from "./plan-format.ts";
 
 export type RequestStatus = "idle" | "loading" | "ready" | "error";
@@ -145,7 +147,10 @@ export function usableGoal(state: WorkflowState): string {
 /** Why the plan cannot be generated yet, or null when it can. */
 export function planBlockReason(state: WorkflowState): string | null {
   if (!state.conditions) return "授業条件を確定してください。";
-  if (state.goalText.trim() === "") return "本時の目標を入力してください。";
+  const goal = state.goalText.trim();
+  if (goal === "") return "本時の目標を入力してください。";
+  if (textLength(goal) > LIMITS.goalMaxLength)
+    return `本時の目標を${LIMITS.goalMaxLength}文字以内にしてください。`;
   if (!state.goalConfirmed)
     return "「この目標を確認しました」にチェックしてください。";
   return null;

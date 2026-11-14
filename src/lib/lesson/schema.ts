@@ -5,6 +5,7 @@
 import { findCatalogUnit } from "./catalog.ts";
 import {
   findCatalogUnitByName,
+  hasInvisibleChars,
   normalizeUnitName,
   textLength,
 } from "./conditions.ts";
@@ -75,6 +76,7 @@ export function parseLessonConditions(
     }
     if (
       normalizeUnitName(unitName) !== unitName ||
+      hasInvisibleChars(unitName) ||
       textLength(unitName) > LIMITS.unitNameMaxLength ||
       findCatalogUnitByName(unitName)
     ) {

@@ -1,3 +1,4 @@
+import { toAsciiDigits } from "./conditions.ts";
 import type { PhaseKey, TimeCheck } from "./types.ts";
 
 export const PHASE_KEYS: readonly PhaseKey[] = [
@@ -6,9 +7,12 @@ export const PHASE_KEYS: readonly PhaseKey[] = [
   "summary",
 ];
 
-/** A phase value is valid only when it is a non-negative integer of at most 999 (after NFKC + trim). */
+/**
+ * A phase value is valid only when it is an integer from 0 to 999 written
+ * with ASCII or full-width digits (after trim).
+ */
 export function parsePhaseMinutes(raw: string): number | null {
-  const text = raw.normalize("NFKC").trim();
+  const text = toAsciiDigits(raw).trim();
   if (!/^[0-9]{1,3}$/.test(text)) return null;
   return Number(text);
 }

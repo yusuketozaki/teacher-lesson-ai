@@ -17,14 +17,34 @@ export function textLength(text: string): number {
 }
 
 /**
- * Parse a non-negative integer typed as text. Full-width digits are accepted
- * because NFKC turns them into ASCII digits. Signs, decimals, exponents and
- * other characters are rejected. Returns null when the text is not accepted.
+ * Map full-width digits ０-９ to ASCII. Other digit-like characters (①, ², …)
+ * are left as they are so that they are rejected, unlike with NFKC.
+ */
+export function toAsciiDigits(text: string): string {
+  return text.replace(/[０-９]/g, (d) =>
+    String.fromCharCode(d.charCodeAt(0) - 0xfee0),
+  );
+}
+
+/**
+ * Parse a non-negative integer typed as text. Only ASCII and full-width
+ * digits are accepted. Signs, decimals, exponents, circled or superscript
+ * digits and other characters are rejected. Returns null when not accepted.
  */
 export function parseIntegerText(raw: string, maxDigits = 6): number | null {
-  const text = raw.normalize("NFKC").trim();
+  const text = toAsciiDigits(raw).trim();
   if (!/^[0-9]+$/.test(text) || text.length > maxDigits) return null;
   return Number(text);
+}
+
+/**
+ * Control, format (zero-width etc.) and Hangul filler characters, which are
+ * invisible or can make a unit name look different from what is stored.
+ */
+const INVISIBLE_CHARS = /[\p{Cc}\p{Cf}\u115F\u1160\u3164\uFFA0]/u;
+
+export function hasInvisibleChars(text: string): boolean {
+  return INVISIBLE_CHARS.test(text);
 }
 
 /** Returns the catalog unit whose normalized name equals the given name. */
@@ -59,6 +79,12 @@ export function validateConditions(
     const duplicate = name === "" ? undefined : findCatalogUnitByName(name);
     if (name === "") {
       errors.customUnitName = "単元名を入力してください（空白のみは不可）。";
+    } else if (
+      hasInvisibleChars(input.customUnitName) ||
+      hasInvisibleChars(name)
+    ) {
+      errors.customUnitName =
+        "単元名に制御文字や幅のない文字など、表示されない文字は使えません。";
     } else if (textLength(name) > LIMITS.unitNameMaxLength) {
       errors.customUnitName = `単元名は${LIMITS.unitNameMaxLength}文字以内で入力してください。`;
     } else if (duplicate) {

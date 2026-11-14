@@ -83,7 +83,15 @@ export function GoalStep({ state, dispatch, focusLater }: GoalStepProps) {
           </div>
         )}
         {goals.status === "ready" && goals.candidates.length === 0 && (
-          <p role="status">候補がありません。目標を直接入力してください。</p>
+          <div>
+            <p role="status">候補がありません。目標を直接入力してください。</p>
+            <button
+              type="button"
+              onClick={() => dispatch({ type: "goalsRequested" })}
+            >
+              再試行
+            </button>
+          </div>
         )}
         {goals.status === "ready" && goals.candidates.length > 0 && (
           <fieldset>

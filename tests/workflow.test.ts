@@ -182,6 +182,31 @@ test("empty candidates still allow manual goal entry", () => {
   assert.equal(s2.goals.status, "ready");
   assert.deepEqual(s2.goals.candidates, []);
   assert.equal(planBlockReason(s2), null);
+
+  // Retrying keeps the manually entered goal and starts a new request.
+  const retried = workflowReducer(s2, { type: "goalsRequested" });
+  assert.equal(retried.goals.status, "loading");
+  assert.notEqual(retried.goals.requestId, s.goals.requestId);
+  assert.equal(retried.goalText, "手入力の架空目標");
+});
+
+test("an over-long goal blocks the plan request", () => {
+  const s = run(
+    confirmed(),
+    { type: "goalTextChanged", value: "あ".repeat(201) },
+    { type: "goalConfirmedChanged", confirmed: true },
+  );
+  assert.match(planBlockReason(s) ?? "", /200文字以内/);
+  assert.equal(
+    workflowReducer(s, { type: "planRequested" }).plan.status,
+    "idle",
+  );
+  const ok = run(
+    s,
+    { type: "goalTextChanged", value: ` ${"あ".repeat(200)} ` },
+    { type: "goalConfirmedChanged", confirmed: true },
+  );
+  assert.equal(planBlockReason(ok), null);
 });
 
 test("goal request failure then retry succeeds", () => {

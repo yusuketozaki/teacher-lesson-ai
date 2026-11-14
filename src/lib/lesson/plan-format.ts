@@ -52,7 +52,7 @@ function signed(n: number): string {
 export function describeTimeCheck(check: TimeCheck): string {
   if (check.status === "invalid") {
     const phases = check.invalidPhases.map((k) => PHASE_LABELS[k]).join("・");
-    return `時間配分: 合計を計算できません（授業時間 ${check.durationMinutes}分）。※${phases}の分数が0以上の整数ではありません。確認してください。`;
+    return `時間配分: 合計を計算できません（授業時間 ${check.durationMinutes}分）。※${phases}の分数が0〜999の整数ではありません。確認してください。`;
   }
   const base = `時間配分: 合計 ${check.total}分 / 授業時間 ${check.durationMinutes}分 / 差 ${signed(check.difference ?? 0)}分`;
   if (check.status === "under") {

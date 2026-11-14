@@ -223,7 +223,7 @@ function PlanEditor({
             {invalid.has(key) && (
               <p className="field-error" id={`plan-${key}-minutes-error`}>
                 <span aria-hidden="true">✕ </span>
-                0以上の整数で入力してください。
+                0〜999の整数で入力してください。
               </p>
             )}
           </div>

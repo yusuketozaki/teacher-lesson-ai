@@ -289,6 +289,22 @@ test.describe("condition validation", () => {
     await expect(await errorOf(page, "customUnitName")).toContainText(
       "一覧にある単元",
     );
+
+    await name.fill("\u200b");
+    await submitConditions(page);
+    await expect(await errorOf(page, "customUnitName")).toContainText(
+      "表示されない文字",
+    );
+    await expect(candidateRadios(page)).toHaveCount(0);
+  });
+
+  test("circled and superscript digits are rejected", async ({ page }) => {
+    await page.goto("/");
+    await fillConditions(page, { total: "①", lesson: "²", duration: "４５" });
+    await submitConditions(page);
+    await expect(await errorOf(page, "totalLessons")).toBeVisible();
+    await expect(await errorOf(page, "lessonNumber")).toBeVisible();
+    await expect(await errorOf(page, "durationMinutes")).toHaveCount(0);
   });
 });
 
@@ -355,10 +371,14 @@ test.describe("requests", () => {
     expect(calls).toBe(2);
   });
 
-  test("empty candidates allow manual goal entry", async ({ page }) => {
-    await page.route(GOALS_API, (route) =>
-      route.fulfill({ json: { source: "mock", candidates: [] } }),
-    );
+  test("empty candidates allow manual goal entry and retry", async ({
+    page,
+  }) => {
+    let calls = 0;
+    await page.route(GOALS_API, (route) => {
+      calls += 1;
+      return route.fulfill({ json: { source: "mock", candidates: [] } });
+    });
     await page.goto("/");
     await fillConditions(page);
     await submitConditions(page);
@@ -368,6 +388,13 @@ test.describe("requests", () => {
     await page.locator("#field-goal").fill("手入力の架空の目標");
     await page.getByLabel("この目標を確認しました").check();
     await expect(generateButton(page)).toBeEnabled();
+
+    await page.getByRole("button", { name: "再試行" }).click();
+    await expect.poll(() => calls).toBe(2);
+    await expect(
+      page.getByText("候補がありません。目標を直接入力してください。"),
+    ).toBeVisible();
+    await expect(page.locator("#field-goal")).toHaveValue("手入力の架空の目標");
   });
 
   for (const [name, body] of [

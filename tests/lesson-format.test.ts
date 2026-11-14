@@ -41,7 +41,7 @@ test("time check: match, under, over", () => {
 });
 
 test("time check: invalid phase values", () => {
-  for (const bad of ["", "-5", "1.5", "abc", "1000", " "]) {
+  for (const bad of ["", "-5", "1.5", "abc", "1000", " ", "①", "²", "1²"]) {
     const result = check(bad, "30", "10");
     assert.equal(result.status, "invalid", bad);
     assert.equal(result.total, null);
@@ -54,6 +54,7 @@ test("time check: invalid phase values", () => {
   ]);
   assert.equal(check("0", "35", "10").status, "match");
   assert.equal(check(" ５ ", "30", "10").status, "match");
+  assert.equal(check("０５", "30", "10").status, "match");
 });
 
 test("toEditablePlan and splitLines", () => {

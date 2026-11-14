@@ -22,7 +22,7 @@ function statusText(check: TimeCheck): { icon: string; text: string } {
         icon: "✕",
         text: `数値として不正な欄あり（${check.invalidPhases
           .map((key) => PHASE_LABELS[key])
-          .join("・")}）：分は0以上の整数で入力してください。`,
+          .join("・")}）：分は0〜999の整数で入力してください。`,
       };
   }
 }

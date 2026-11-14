@@ -114,10 +114,35 @@ test("totalLessons rejects empty, 0, negative, decimal, non-numeric, >30", () =>
   assert.equal(v({ totalLessons: "1", lessonNumber: "1" }).ok, true);
 });
 
-test("full-width digits are accepted via NFKC", () => {
+test("full-width digits are accepted; other digit-like characters are not", () => {
   const result = v({ totalLessons: "１０", durationMinutes: "４５" });
   assert.equal(result.ok, true);
   if (result.ok) assert.equal(result.conditions.durationMinutes, 45);
+  const leadingZero = v({ lessonNumber: "０５" });
+  assert.equal(leadingZero.ok, true);
+  if (leadingZero.ok) assert.equal(leadingZero.conditions.lessonNumber, 5);
+  for (const value of ["①", "²", "1²", "٣", "Ⅲ"]) {
+    assert.ok(errorsOf({ lessonNumber: value }).lessonNumber, value);
+  }
+});
+
+test("custom unit names with invisible characters are rejected", () => {
+  for (const name of [
+    "\u200b",
+    "\u200b\u200b",
+    "架空の\u200b単元",
+    "架空の\u0007単元",
+    "架空の\u202e単元",
+    "\u3164",
+    "架空\u3164単元",
+  ]) {
+    const errors = errorsOf({ unitMode: "custom", customUnitName: name });
+    assert.ok(errors.customUnitName, JSON.stringify(name));
+  }
+  assert.equal(
+    v({ unitMode: "custom", customUnitName: "架空の単元テスト" }).ok,
+    true,
+  );
 });
 
 test("lessonNumber must be within 1..totalLessons", () => {
