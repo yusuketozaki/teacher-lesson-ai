@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type Dispatch, type FormEvent } from "react";
+import type { Dispatch, FormEvent } from "react";
 import { CATALOG_NOTICE, UNIT_CATALOG } from "@/lib/lesson/catalog";
 import { validateConditions } from "@/lib/lesson/conditions";
 import { LIMITS } from "@/lib/lesson/limits";
@@ -10,7 +10,6 @@ import {
   type ConditionsField,
 } from "@/lib/lesson/types";
 import type { WorkflowAction, WorkflowState } from "@/lib/lesson/workflow";
-import { DiscardDialog } from "./DiscardDialog";
 import { PrivacyHint } from "./SafetyNotices";
 
 interface ConditionsStepProps {
@@ -59,7 +58,6 @@ export function ConditionsStep({
   dispatch,
   focusLater,
 }: ConditionsStepProps) {
-  const changeButtonRef = useRef<HTMLButtonElement>(null);
   const { form, fieldErrors: errors, conditions } = state;
 
   function change(field: ConditionsField, value: string) {
@@ -119,24 +117,9 @@ export function ConditionsStep({
             <dd>{conditions.durationMinutes}分</dd>
           </div>
         </dl>
-        <button type="button" ref={changeButtonRef} onClick={requestChange}>
+        <button type="button" id="change-conditions" onClick={requestChange}>
           条件を変更
         </button>
-        {state.pendingDiscard === "conditions" && (
-          <DiscardDialog
-            title="条件を変更しますか？"
-            message="条件を変更すると、目標候補・確認済みの目標・授業案（編集内容を含む）を破棄します。"
-            confirmLabel="破棄して条件を変更"
-            onConfirm={() => {
-              dispatch({ type: "discardConfirmed" });
-              focusLater("field-unitMode-catalog");
-            }}
-            onCancel={() => {
-              dispatch({ type: "discardCancelled" });
-              changeButtonRef.current?.focus();
-            }}
-          />
-        )}
       </div>
     );
   }

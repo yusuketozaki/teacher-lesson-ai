@@ -64,9 +64,15 @@ export function describeTimeCheck(check: TimeCheck): string {
   return base;
 }
 
+const BLANK = "（未記入）";
+
+function orBlank(text: string): string {
+  return text.trim() === "" ? BLANK : text;
+}
+
 function bullets(text: string): string[] {
   const items = splitLines(text);
-  return items.length > 0 ? items.map((item) => `- ${item}`) : ["- （未記入）"];
+  return items.length > 0 ? items.map((item) => `- ${item}`) : [`- ${BLANK}`];
 }
 
 /** Plain-text export using the teacher's current edited values verbatim. */
@@ -84,7 +90,7 @@ export function formatPlanForCopy(
         : parsePhaseMinutes(minutes) !== null
           ? `${minutes}分`
           : minutes;
-    return `【${PHASE_LABELS[key]}】（${label}）\n${phase.activity}`;
+    return `【${PHASE_LABELS[key]}】（${label}）\n${orBlank(phase.activity)}`;
   };
   return [
     "授業案 たたき台（mock 出力・教員確認前）",
@@ -95,7 +101,7 @@ export function formatPlanForCopy(
     `授業時間: ${conditions.durationMinutes}分`,
     "",
     "本時の目標:",
-    plan.goal,
+    orBlank(plan.goal),
     "",
     phaseLine("introduction"),
     "",

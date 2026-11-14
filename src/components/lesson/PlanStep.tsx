@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type Dispatch } from "react";
+import type { Dispatch } from "react";
 import { LIMITS } from "@/lib/lesson/limits";
 import { formatPlanForCopy, PHASE_LABELS } from "@/lib/lesson/plan-format";
 import { checkTimeAllocation, PHASE_KEYS } from "@/lib/lesson/time-check";
@@ -15,18 +15,15 @@ import {
   type WorkflowState,
 } from "@/lib/lesson/workflow";
 import { CopyPanel } from "./CopyPanel";
-import { DiscardDialog } from "./DiscardDialog";
 import { PrivacyHint } from "./SafetyNotices";
 import { TimeSummary } from "./TimeSummary";
 
 interface PlanStepProps {
   state: WorkflowState;
   dispatch: Dispatch<WorkflowAction>;
-  focusLater: (id: string) => void;
 }
 
-export function PlanStep({ state, dispatch, focusLater }: PlanStepProps) {
-  const regenerateRef = useRef<HTMLButtonElement>(null);
+export function PlanStep({ state, dispatch }: PlanStepProps) {
   const { plan, conditions } = state;
 
   if (!conditions) {
@@ -42,10 +39,7 @@ export function PlanStep({ state, dispatch, focusLater }: PlanStepProps) {
           className="primary"
           disabled={reason !== null}
           aria-describedby={reason ? "plan-block-reason" : undefined}
-          onClick={() => {
-            dispatch({ type: "planRequested" });
-            focusLater("plan-status");
-          }}
+          onClick={() => dispatch({ type: "planRequested" })}
         >
           授業案のたたき台を作成
         </button>
@@ -99,30 +93,12 @@ export function PlanStep({ state, dispatch, focusLater }: PlanStepProps) {
       <div className="button-row">
         <button
           type="button"
-          ref={regenerateRef}
-          onClick={() => {
-            dispatch({ type: "regenerateRequested" });
-            if (!plan.edited) focusLater("plan-status");
-          }}
+          id="regenerate-plan"
+          onClick={() => dispatch({ type: "regenerateRequested" })}
         >
           授業案を作り直す
         </button>
       </div>
-      {state.pendingDiscard === "regenerate" && (
-        <DiscardDialog
-          title="授業案を作り直しますか？"
-          message="作り直すと、授業案に加えた編集内容を破棄します。"
-          confirmLabel="編集内容を破棄して作り直す"
-          onConfirm={() => {
-            dispatch({ type: "discardConfirmed" });
-            focusLater("plan-status");
-          }}
-          onCancel={() => {
-            dispatch({ type: "discardCancelled" });
-            regenerateRef.current?.focus();
-          }}
-        />
-      )}
       <PlanEditor
         conditions={conditions}
         editable={plan.editable}

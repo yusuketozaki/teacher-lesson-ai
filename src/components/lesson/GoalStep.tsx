@@ -1,14 +1,15 @@
 "use client";
 
-import { useRef, type Dispatch } from "react";
+import type { Dispatch } from "react";
 import { LIMITS } from "@/lib/lesson/limits";
 import {
   isGoalLocked,
   type WorkflowAction,
   type WorkflowState,
 } from "@/lib/lesson/workflow";
-import { DiscardDialog } from "./DiscardDialog";
 import { PrivacyHint } from "./SafetyNotices";
+
+export const candidateInputId = (id: string) => `goal-candidate-${id}`;
 
 interface GoalStepProps {
   state: WorkflowState;
@@ -17,7 +18,6 @@ interface GoalStepProps {
 }
 
 export function GoalStep({ state, dispatch, focusLater }: GoalStepProps) {
-  const changeButtonRef = useRef<HTMLButtonElement>(null);
   const { goals } = state;
 
   if (!state.conditions) {
@@ -31,7 +31,7 @@ export function GoalStep({ state, dispatch, focusLater }: GoalStepProps) {
         <p className="locked-goal">{state.plan.goal}</p>
         <button
           type="button"
-          ref={changeButtonRef}
+          id="change-goal"
           onClick={() => {
             dispatch({ type: "changeGoalRequested" });
             if (!state.plan.editable) focusLater("field-goal");
@@ -39,21 +39,6 @@ export function GoalStep({ state, dispatch, focusLater }: GoalStepProps) {
         >
           目標を変更
         </button>
-        {state.pendingDiscard === "goal" && (
-          <DiscardDialog
-            title="目標を変更しますか？"
-            message="目標を変更すると、授業案（編集内容を含む）を破棄します。"
-            confirmLabel="破棄して目標を変更"
-            onConfirm={() => {
-              dispatch({ type: "discardConfirmed" });
-              focusLater("field-goal");
-            }}
-            onCancel={() => {
-              dispatch({ type: "discardCancelled" });
-              changeButtonRef.current?.focus();
-            }}
-          />
-        )}
       </div>
     );
   }
@@ -102,6 +87,7 @@ export function GoalStep({ state, dispatch, focusLater }: GoalStepProps) {
               <label className="choice candidate" key={candidate.id}>
                 <input
                   type="radio"
+                  id={candidateInputId(candidate.id)}
                   name="goalCandidate"
                   value={candidate.id}
                   checked={state.selectedCandidateId === candidate.id}
@@ -122,7 +108,7 @@ export function GoalStep({ state, dispatch, focusLater }: GoalStepProps) {
       <div className="field">
         <label htmlFor="field-goal">本時の目標</label>
         <p className="hint" id="hint-goal">
-          候補を選ぶとここに入ります。直接入力・修正もできます（
+          候補を選ぶとここに入ります。直接入力・修正もできます。書き換えた後に別の候補を選ぶと、置き換えてよいか確認します（
           {LIMITS.goalMaxLength}文字以内・上限は暫定）。
         </p>
         <PrivacyHint id="privacy-goal" />

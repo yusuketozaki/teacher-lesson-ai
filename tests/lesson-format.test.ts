@@ -104,7 +104,28 @@ test("formatPlanForCopy shows raw invalid minutes and a warning", () => {
   );
   assert.match(text, /【展開】（abc）/);
   assert.match(text, /合計を計算できません/);
-  assert.match(text, /展開/);
+  assert.match(text, /展開の分数が0〜999の整数ではありません/);
+});
+
+test("formatPlanForCopy marks empty fields as 未記入", () => {
+  const editable = toEditablePlan(mockLessonPlan(conditions, "目標"));
+  editable.goal = "  ";
+  editable.development.activity = "";
+  editable.materials = "\n \n";
+  editable.understandingChecks = "";
+  const text = formatPlanForCopy(
+    conditions,
+    editable,
+    check(
+      editable.introduction.minutes,
+      editable.development.minutes,
+      editable.summary.minutes,
+    ),
+  );
+  assert.match(text, /本時の目標:\n（未記入）\n/);
+  assert.match(text, /【展開】（\d+分）\n（未記入）\n/);
+  assert.match(text, /準備物:\n- （未記入）\n/);
+  assert.match(text, /理解状況の確認方法:\n- （未記入）\n/);
 });
 
 test("formatPlanForCopy has no warning when time matches", () => {

@@ -395,3 +395,75 @@ test("form is read-only while conditions are confirmed", () => {
     s,
   );
 });
+
+test("switching candidates without own edits does not ask", () => {
+  const s = run(
+    withCandidates(),
+    { type: "candidateSelected", candidateId: "c1" },
+    { type: "candidateSelected", candidateId: "c2" },
+  );
+  assert.equal(s.pendingDiscard, null);
+  assert.equal(s.selectedCandidateId, "c2");
+  assert.equal(s.goalText, candidates[1].text);
+});
+
+test("picking a candidate over edited goal text asks; keep or discard", () => {
+  const edited = run(
+    withCandidates(),
+    { type: "candidateSelected", candidateId: "c1" },
+    { type: "goalTextChanged", value: "架空の書き換えた目標" },
+  );
+  const asking = run(edited, { type: "candidateSelected", candidateId: "c2" });
+  assert.equal(asking.pendingDiscard, "candidate");
+  assert.equal(asking.pendingCandidateId, "c2");
+  assert.equal(asking.goalText, "架空の書き換えた目標");
+  assert.equal(asking.selectedCandidateId, "c1");
+
+  // Other changes are blocked while the confirmation is open.
+  assert.equal(
+    run(asking, { type: "goalTextChanged", value: "別の文" }),
+    asking,
+  );
+  assert.equal(
+    run(asking, { type: "candidateSelected", candidateId: "c3" }),
+    asking,
+  );
+
+  const kept = run(asking, { type: "discardCancelled" });
+  assert.equal(kept.pendingDiscard, null);
+  assert.equal(kept.pendingCandidateId, null);
+  assert.equal(kept.goalText, "架空の書き換えた目標");
+  assert.equal(kept.selectedCandidateId, "c1");
+
+  const replaced = run(asking, { type: "discardConfirmed" });
+  assert.equal(replaced.pendingDiscard, null);
+  assert.equal(replaced.goalText, candidates[1].text);
+  assert.equal(replaced.selectedCandidateId, "c2");
+  assert.equal(replaced.goalConfirmed, false);
+});
+
+test("manually typed goal with no selection also asks before a candidate", () => {
+  const asking = run(
+    withCandidates(),
+    { type: "goalTextChanged", value: "架空の手入力目標" },
+    { type: "candidateSelected", candidateId: "c1" },
+  );
+  assert.equal(asking.pendingDiscard, "candidate");
+  assert.equal(asking.goalText, "架空の手入力目標");
+});
+
+test("plan edits are blocked while a discard confirmation is open", () => {
+  const edited = run(withPlan(), {
+    type: "planTextChanged",
+    field: "materials",
+    value: "架空の準備物",
+  });
+  const asking = run(edited, { type: "regenerateRequested" });
+  assert.equal(asking.pendingDiscard, "regenerate");
+  const blocked = run(
+    asking,
+    { type: "planTextChanged", field: "materials", value: "変更" },
+    { type: "phaseChanged", phase: "summary", field: "minutes", value: "1" },
+  );
+  assert.equal(blocked, asking);
+});

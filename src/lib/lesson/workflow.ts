@@ -32,7 +32,7 @@ export interface RequestError {
   message: string;
 }
 
-export type DiscardKind = "conditions" | "goal" | "regenerate";
+export type DiscardKind = "conditions" | "goal" | "regenerate" | "candidate";
 
 export interface GoalsState {
   status: RequestStatus;
@@ -63,6 +63,8 @@ export interface WorkflowState {
   goalConfirmed: boolean;
   plan: PlanState;
   pendingDiscard: DiscardKind | null;
+  /** Candidate the teacher picked while the goal text had their own edits. */
+  pendingCandidateId: string | null;
   lastRequestId: number;
 }
 
@@ -136,6 +138,7 @@ export const initialWorkflowState: WorkflowState = {
   goalConfirmed: false,
   plan: IDLE_PLAN,
   pendingDiscard: null,
+  pendingCandidateId: null,
   lastRequestId: 0,
 };
 
@@ -172,6 +175,37 @@ export function hasEnteredContent(state: WorkflowState): boolean {
     state.goalText !== "" ||
     state.plan.editable !== null
   );
+}
+
+/**
+ * True when the goal text holds the teacher's own wording: it is not empty
+ * and differs from the selected candidate (or no candidate is selected).
+ */
+export function hasGoalEdits(state: WorkflowState): boolean {
+  if (state.goalText.trim() === "") return false;
+  const selected = state.goals.candidates.find(
+    (c) => c.id === state.selectedCandidateId,
+  );
+  return !selected || selected.text !== state.goalText;
+}
+
+/** Actions that only report request results; allowed while a dialog is open. */
+const ALLOWED_WHILE_CONFIRMING = new Set<WorkflowAction["type"]>([
+  "goalsResolved",
+  "planResolved",
+  "discardConfirmed",
+  "discardCancelled",
+]);
+
+function applyCandidate(state: WorkflowState, candidateId: string) {
+  const candidate = state.goals.candidates.find((c) => c.id === candidateId);
+  if (!candidate) return state;
+  return {
+    ...state,
+    selectedCandidateId: candidate.id,
+    goalText: candidate.text,
+    goalConfirmed: false,
+  };
 }
 
 function hasGoalStepContent(state: WorkflowState): boolean {
@@ -215,6 +249,7 @@ function resetDownstreamOfConditions(state: WorkflowState): WorkflowState {
     goalConfirmed: false,
     plan: IDLE_PLAN,
     pendingDiscard: null,
+    pendingCandidateId: null,
   });
 }
 
@@ -246,6 +281,10 @@ export function workflowReducer(
   state: WorkflowState,
   action: WorkflowAction,
 ): WorkflowState {
+  // While a confirmation is open, the rest of the workflow cannot change.
+  if (state.pendingDiscard && !ALLOWED_WHILE_CONFIRMING.has(action.type)) {
+    return state;
+  }
   switch (action.type) {
     case "formChanged": {
       if (state.conditions) return state;
@@ -324,16 +363,18 @@ export function workflowReducer(
 
     case "candidateSelected": {
       if (isGoalLocked(state)) return state;
-      const candidate = state.goals.candidates.find(
-        (c) => c.id === action.candidateId,
-      );
-      if (!candidate) return state;
-      return {
-        ...state,
-        selectedCandidateId: candidate.id,
-        goalText: candidate.text,
-        goalConfirmed: false,
-      };
+      if (action.candidateId === state.selectedCandidateId) return state;
+      if (!state.goals.candidates.some((c) => c.id === action.candidateId))
+        return state;
+      // Never overwrite the teacher's own wording without asking.
+      if (hasGoalEdits(state)) {
+        return {
+          ...state,
+          pendingDiscard: "candidate",
+          pendingCandidateId: action.candidateId,
+        };
+      }
+      return applyCandidate(state, action.candidateId);
     }
 
     case "goalTextChanged":
@@ -413,13 +454,18 @@ export function workflowReducer(
             { ...state, pendingDiscard: null },
             state.plan.goal ?? state.goalText.trim(),
           );
+        case "candidate":
+          return applyCandidate(
+            { ...state, pendingDiscard: null, pendingCandidateId: null },
+            state.pendingCandidateId ?? "",
+          );
         default:
           return state;
       }
 
     case "discardCancelled":
       if (!state.pendingDiscard) return state;
-      return { ...state, pendingDiscard: null };
+      return { ...state, pendingDiscard: null, pendingCandidateId: null };
 
     default:
       return state;

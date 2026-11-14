@@ -7,9 +7,10 @@ export function SafetyNotices() {
       <p className="mock-banner">
         <span className="badge">MOCK</span>
         出力は固定テンプレートによる mock です。AI
-        は使用していません。第三者のサービスや外部 AI
-        へは送信しません。入力した条件と目標文は、このアプリ自身の mock API
-        へ送られ、メモリ上で処理されます。保存・ログ出力はしません。
+        は使用していません。このアプリのコードは、第三者のサービスや外部 AI
+        へ入力内容を送信しません。入力した条件と目標文は、このアプリ自身の mock
+        API
+        へ送られ、メモリ上で処理されます。このアプリのコードでは保存・ログ出力しません。
       </p>
       <div className="storage-notice">
         <p>

@@ -142,6 +142,8 @@ test.describe("normal flow", () => {
       "架空の編集済み目標：割合の意味を説明できる。（修正）",
     );
     await expect(page.getByText("たたき台（mock・教員確認前）")).toBeVisible();
+    // Focus lands on the persistent status once the plan is ready.
+    await expect(page.locator("#plan-status")).toBeFocused();
     await expect(page.locator(".review-notice")).not.toBeEmpty();
 
     const status = page.locator(".time-status");
@@ -447,8 +449,11 @@ test.describe("requests", () => {
     await confirmFirstCandidate(page);
     await generateButton(page).click();
     await expect(page.locator(".error-box[role=alert]")).toBeVisible();
+    await expect(page.locator("#plan-status")).toBeFocused();
     await page.getByRole("button", { name: "再試行" }).click();
     await expect(page.locator("#plan-goal")).toBeVisible();
+    // The retry button is gone; focus moves to the plan status, not <body>.
+    await expect(page.locator("#plan-status")).toBeFocused();
   });
 
   test("a slow response for old conditions never appears", async ({ page }) => {
@@ -519,11 +524,16 @@ test.describe("discard confirmations", () => {
     await change.click();
     const dialog = page.getByRole("alertdialog");
     await expect(dialog).toContainText(
-      "条件を変更すると、目標候補・確認済みの目標・授業案（編集内容を含む）を破棄します。",
+      "条件を変更すると、目標候補・入力した目標・授業案（編集内容を含む）を破棄します。",
     );
     await expect(
       dialog.getByRole("button", { name: "キャンセル" }),
     ).toBeFocused();
+    // The rest of the workflow is inert while the dialog is open.
+    await expect(page.locator(".workflow")).toHaveAttribute("inert", "");
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Tab");
+    await expect(page.locator("#plan-goal")).not.toBeFocused();
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
     await expect(change).toBeFocused();
@@ -573,6 +583,51 @@ test.describe("discard confirmations", () => {
       .getByRole("button", { name: "編集内容を破棄して作り直す" })
       .click();
     await expect(page.locator("#plan-goal")).toHaveValue(original);
+  });
+
+  test("candidate over an edited goal asks; arrow keys never overwrite silently", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await fillConditions(page);
+    await submitConditions(page);
+    const radios = candidateRadios(page);
+    await expect(radios).toHaveCount(3);
+    const goal = page.locator("#field-goal");
+
+    // Without own edits, switching candidates needs no confirmation.
+    await radios.nth(0).check();
+    const first = await goal.inputValue();
+    await radios.nth(0).press("ArrowDown");
+    await expect(page.getByRole("alertdialog")).toHaveCount(0);
+    await expect(radios.nth(1)).toBeChecked();
+    await expect(goal).not.toHaveValue(first);
+
+    await goal.fill("架空の書き換えた目標");
+    await radios.nth(1).focus();
+    await page.keyboard.press("ArrowDown");
+    const dialog = page.getByRole("alertdialog");
+    await expect(dialog).toContainText("置き換えると、その内容を破棄します");
+    await expect(goal).toHaveValue("架空の書き換えた目標");
+    await dialog.getByRole("button", { name: "入力した目標を保持" }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(goal).toHaveValue("架空の書き換えた目標");
+    await expect(radios.nth(1)).toBeChecked();
+    await expect(radios.nth(1)).toBeFocused();
+
+    await radios.nth(2).click();
+    await expect(dialog).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(goal).toHaveValue("架空の書き換えた目標");
+
+    await radios.nth(2).click();
+    await dialog
+      .getByRole("button", { name: "破棄して候補に置き換える" })
+      .click();
+    await expect(radios.nth(2)).toBeChecked();
+    await expect(radios.nth(2)).toBeFocused();
+    await expect(goal).not.toHaveValue("架空の書き換えた目標");
+    await expect(goal).not.toHaveValue("");
   });
 
   test("regenerate without edits does not ask", async ({ page }) => {
@@ -653,10 +708,33 @@ test("reload resets state and nothing is kept in browser storage", async ({
     cookie: document.cookie,
   }));
   expect(after).toEqual({ local: 0, session: 0, cookie: "" });
+  const databases = await page.evaluate(async () =>
+    (await indexedDB.databases()).map((db) => db.name),
+  );
+  expect(databases).toEqual([]);
 });
 
 test.describe("phone width", () => {
   test.use({ viewport: { width: 360, height: 740 } });
+
+  const overflow = (page: Page) =>
+    page.evaluate(
+      () =>
+        document.documentElement.scrollWidth -
+        document.documentElement.clientWidth,
+    );
+
+  test("conditions step with errors has no horizontal scroll", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    expect(await overflow(page)).toBeLessThanOrEqual(0);
+    await submitConditions(page);
+    await expect(page.locator("#error-unitId")).toBeVisible();
+    expect(await overflow(page)).toBeLessThanOrEqual(0);
+    await page.getByLabel("候補にない単元を追加").check();
+    expect(await overflow(page)).toBeLessThanOrEqual(0);
+  });
 
   test("plan view has no horizontal scroll", async ({ page }) => {
     await reachPlan(page);
